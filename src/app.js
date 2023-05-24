@@ -71,7 +71,6 @@ module.exports = (db) => {
             // }
             
             db.all('SELECT * FROM Rides WHERE rideID = ?', this.lastID, function (err, rows) {
-                console.log(err)
                 if (err) {
                     return res.send({
                         error_code: 'SERVER_ERROR',
@@ -86,10 +85,9 @@ module.exports = (db) => {
     });
 
     app.get('/rides', async (req, res) => {
-        const start = req.query.start ? req.query.start * 10 : 0 // here getting start for skip the rows
         const length = req.query.length ? req.query.length : 10 // here getting the length for return the no of rows.
+        const start = req.query.page ? (req.query.page - 1) * length : 0 // here getting start for skip the rows
         db.all(`SELECT * FROM Rides LIMIT ${length} OFFSET ${start}`, function (err, rows) {
-            console.log(err)
             if (err) {
                 return res.send({
                     error_code: 'SERVER_ERROR',
