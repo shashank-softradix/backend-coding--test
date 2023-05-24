@@ -86,8 +86,6 @@ module.exports = (db) => {
     });
 
     app.get('/rides', async (req, res) => {
-        const start = req.query.start ? req.query.start * 10 : 0 // here getting start for skip the rows
-        const length = req.query.length ? req.query.length : 10 // here getting the length for return the no of rows.
         db.all(`SELECT * FROM Rides LIMIT ${length} OFFSET ${start}`, function (err, rows) {
             console.log(err)
             if (err) {
