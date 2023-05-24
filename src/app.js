@@ -85,7 +85,7 @@ module.exports = (db) => {
         });
     });
 
-    app.get('/rides', async (req, res) => {
+    app.get('/rides', (req, res) => {
         db.all('SELECT * FROM Rides LIMIT', function (err, rows) {
             console.log(err)
             if (err) {
