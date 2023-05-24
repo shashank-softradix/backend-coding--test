@@ -9,7 +9,8 @@ const jsonParser = bodyParser.json();
 module.exports = (db) => { 
     app.get('/health', (req, res) => res.send('Healthy'));
 
-    app.post('/rides', jsonParser, (req, res) => {
+    app.post('/rides', jsonParser, async (req, res) => {
+       try {
         const startLatitude = Number(req.body.start_lat);
         const startLongitude = Number(req.body.start_long);
         const endLatitude = Number(req.body.end_lat);
@@ -54,77 +55,97 @@ module.exports = (db) => {
         }
 
         var values = [req.body.start_lat, req.body.start_long, req.body.end_lat, req.body.end_long, req.body.rider_name, req.body.driver_name, req.body.driver_vehicle];
-        
-        const result = db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (err) {
-            if (err) {
-                return res.send({
-                    error_code: 'SERVER_ERROR',
-                    message: 'Unknown error'
-                });
-            }
-            // else {
-            //     return res.json({
-            //         status : 1,
-            //         msg : "Ride is created successfully",
-                    
-            //     })
-            // }
-            
-            db.all('SELECT * FROM Rides WHERE rideID = ?', this.lastID, function (err, rows) {
-                console.log(err)
-                if (err) {
-                    return res.send({
-                        error_code: 'SERVER_ERROR',
-                        message: 'Unknown error',
-                        
-                    });
-                }
 
-                res.send(rows);
-            });
-        });
+        const createdRide = await createRide(db, values)
+        const result = await getRidesByID(db, createdRide)
+        res.send(result);
+       } catch (error) {
+        return res.send(error)
+       }
     });
 
-    app.get('/rides', (req, res) => {
-        db.all('SELECT * FROM Rides LIMIT', function (err, rows) {
-            console.log(err)
-            if (err) {
-                return res.send({
-                    error_code: 'SERVER_ERROR',
-                    message: 'Unknown error'
-                });
-            }
-
-            if (rows.length === 0) {
-                return res.send({
-                    error_code: 'RIDES_NOT_FOUND_ERROR',
-                    message: 'Could not find any rides'
-                });
-            }
-
-            res.send(rows);
-        });
+    app.get('/rides', async (req, res) => {
+        try {
+            const result = await getRides(db)
+            res.send(result)
+        } catch (error) {
+            res.send(error)
+        }
     });
 
-    app.get('/rides/:id', (req, res) => {
-        db.all(`SELECT * FROM Rides WHERE rideID='${req.params.id}'`, function (err, rows) {
-            if (err) {
-                return res.send({
-                    error_code: 'SERVER_ERROR',
-                    message: 'Unknown error'
-                });
-            }
-
-            if (rows.length === 0) {
-                return res.send({
-                    error_code: 'RIDES_NOT_FOUND_ERROR',
-                    message: 'Could not find any rides'
-                });
-            }
-
-            res.send(rows);
-        });
+    app.get('/rides/:id', async(req, res) => {
+       try {
+        const result = await getRidesByID(db, req.params.id)
+        res.send(result)
+       } catch (error) {
+        res.send(error)
+       } 
     });
 
     return app;
 };
+
+
+async function getRides(db) {
+    return new Promise((resolve, reject) => {
+        db.all('SELECT * FROM Rides', function (err, rows) {
+            console.log(err)
+            if (err) {
+                const response = {
+                    error_code: 'SERVER_ERROR',
+                    message: 'Unknown error'
+                }
+                reject(response)
+            }
+
+            if (rows.length === 0) {
+                const response = {
+                    error_code: 'RIDES_NOT_FOUND_ERROR',
+                    message: 'Could not find any rides'
+                }
+                resolve(response)
+            }
+
+            resolve(rows)
+        });
+    })
+}
+
+async function getRidesByID (db, id) {
+    return new Promise((resolve, reject) => {
+        db.all(`SELECT * FROM Rides WHERE rideID='${id}'`, function (err, rows) {
+            if (err) {
+                const response = {
+                    error_code: 'SERVER_ERROR',
+                    message: 'Unknown error'
+                }
+                reject(response)
+            }
+
+            if (rows.length === 0) {
+                const response = {
+                    error_code: 'RIDES_NOT_FOUND_ERROR',
+                    message: 'Could not find any rides'
+                }
+                resolve(response)
+            }
+
+            resolve(rows)
+        });
+    })
+}
+
+async function createRide(db, values) {
+    return new Promise((resolve, reject) => {
+        const result = db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (err, rows) {
+            if (err) {
+                const response = {
+                    error_code: 'SERVER_ERROR',
+                    message: 'Unknown error'
+                }
+                reject(response)
+            }
+            resolve(this.lastID)
+        });
+    })
+}
