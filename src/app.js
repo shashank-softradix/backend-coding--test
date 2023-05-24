@@ -86,7 +86,7 @@ module.exports = (db) => {
     });
 
     app.get('/rides', async (req, res) => {
-        db.all(`SELECT * FROM Rides LIMIT ${length} OFFSET ${start}`, function (err, rows) {
+        db.all('SELECT * FROM Rides LIMIT', function (err, rows) {
             console.log(err)
             if (err) {
                 return res.send({
