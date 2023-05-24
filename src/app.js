@@ -66,7 +66,9 @@ module.exports = (db) => {
 
     app.get('/rides', async (req, res) => {
         try {
-            const result = await getRides(db)
+            const length = req.query.length ? req.query.length : 10 // here getting the length for return the no of rows.
+            const start = req.query.page ? (req.query.page - 1) * length : 0 // here getting start for skip the rows
+            const result = await getRides(db, length, start)
             res.send(result)
         } catch (error) {
             res.send(error)
@@ -86,10 +88,9 @@ module.exports = (db) => {
 };
 
 
-async function getRides(db) {
+async function getRides(db, length, start) {
     return new Promise((resolve, reject) => {
-        db.all('SELECT * FROM Rides', function (err, rows) {
-            console.log(err)
+        db.all(`SELECT * FROM Rides limit ${length} offset ${start}`, function (err, rows) {
             if (err) {
                 const response = {
                     error_code: 'SERVER_ERROR',
