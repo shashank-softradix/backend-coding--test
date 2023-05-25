@@ -64,7 +64,7 @@ module.exports = (db) => {
        }
     });
 
-    app.get('/rides', async (req, res) => {
+    app.get('/rides-list', async (req, res) => {
         try {
             const length = req.query.length ? req.query.length : 10 // here getting the length for return the no of rows.
             const start = req.query.page ? (req.query.page - 1) * length : 0 // here getting start for skip the rows
