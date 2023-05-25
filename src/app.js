@@ -5,6 +5,7 @@ const app = express();
 
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
+const { logger } = require('../logger');
 
 module.exports = (db) => { 
     app.get('/health', (req, res) => res.send('Healthy'));
@@ -60,7 +61,12 @@ module.exports = (db) => {
         const result = await getRidesByID(db, createdRide)
         res.send(result);
        } catch (error) {
-        return res.send(error)
+        logger(error.message, error)
+        const response = {
+            error_code: 'SERVER_ERROR',
+            message: 'Unknown error'
+        }
+        return res.send(response)
        }
     });
 
@@ -71,7 +77,12 @@ module.exports = (db) => {
             const result = await getRides(db, length, start)
             res.send(result)
         } catch (error) {
-            res.send(error)
+            logger(error.message, error)
+            const response = {
+                error_code: 'SERVER_ERROR',
+                message: 'Unknown error'
+            }
+            res.send(response)
         }
     });
 
@@ -80,7 +91,12 @@ module.exports = (db) => {
         const result = await getRidesByID(db, req.params.id)
         res.send(result)
        } catch (error) {
-        res.send(error)
+        logger(error.message, error)
+        const response = {
+            error_code: 'SERVER_ERROR',
+            message: 'Unknown error'
+        }
+        res.send(response)
        } 
     });
 
@@ -92,11 +108,7 @@ async function getRides(db, length, start) {
     return new Promise((resolve, reject) => {
         db.all(`SELECT * FROM Rides limit ${length} offset ${start}`, function (err, rows) {
             if (err) {
-                const response = {
-                    error_code: 'SERVER_ERROR',
-                    message: 'Unknown error'
-                }
-                reject(response)
+                reject(err)
             }
 
             if (rows.length === 0) {
@@ -116,11 +128,7 @@ async function getRidesByID (db, id) {
     return new Promise((resolve, reject) => {
         db.all(`SELECT * FROM Rides WHERE rideID='${id}'`, function (err, rows) {
             if (err) {
-                const response = {
-                    error_code: 'SERVER_ERROR',
-                    message: 'Unknown error'
-                }
-                reject(response)
+                reject(err)
             }
 
             if (rows.length === 0) {
@@ -140,11 +148,7 @@ async function createRide(db, values) {
     return new Promise((resolve, reject) => {
         const result = db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (err, rows) {
             if (err) {
-                const response = {
-                    error_code: 'SERVER_ERROR',
-                    message: 'Unknown error'
-                }
-                reject(response)
+                reject(err)
             }
             resolve(this.lastID)
         });
